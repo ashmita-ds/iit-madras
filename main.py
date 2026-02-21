@@ -4,6 +4,9 @@ import csv
 import io
 
 app = FastAPI()
+@app.get("/")
+def root():
+    return {"message": "Secure Upload API is running"}
 
 # Enable CORS for POST from any origin
 app.add_middleware(
