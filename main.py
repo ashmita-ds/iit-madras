@@ -2,7 +2,7 @@ from fastapi import FastAPI, UploadFile, File, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import csv
 import io
-
+from fastapi.responses import Response
 app = FastAPI()
 @app.get("/")
 def root():
@@ -79,3 +79,13 @@ async def upload_file(
         "filename": file.filename,
         "message": "File accepted"
     }
+@app.options("/upload")
+async def options_upload():
+    return Response(
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+        },
+    )
