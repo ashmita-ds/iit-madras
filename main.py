@@ -1,0 +1,78 @@
+from fastapi import FastAPI, UploadFile, File, Header, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+import csv
+import io
+
+app = FastAPI()
+
+# Enable CORS for POST from any origin
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["POST"],
+    allow_headers=["*"],
+)
+
+MAX_FILE_SIZE = 50 * 1024  # 50KB
+VALID_TOKEN = "4q1qelzqketpt33q"
+
+
+@app.post("/upload")
+async def upload_file(
+    file: UploadFile = File(...),
+    x_upload_token_6526: str = Header(None, alias="X-Upload-Token-6526")
+):
+
+    # 🔐 Authentication
+    if x_upload_token_6526 != VALID_TOKEN:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # 📁 File type validation
+    if not file.filename.lower().endswith((".csv", ".json", ".txt")):
+        raise HTTPException(status_code=400, detail="Invalid file type")
+
+    contents = await file.read()
+
+    # 📦 File size validation
+    if len(contents) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail="File too large")
+
+    # 📊 Process CSV files only
+    if file.filename.lower().endswith(".csv"):
+        try:
+            decoded = contents.decode("utf-8")
+            reader = csv.DictReader(io.StringIO(decoded))
+            rows = list(reader)
+
+            row_count = len(rows)
+            columns = reader.fieldnames
+
+            total_value = 0.0
+            category_counts = {}
+
+            for row in rows:
+                value = float(row["value"])
+                total_value += value
+
+                category = row["category"]
+                category_counts[category] = category_counts.get(category, 0) + 1
+
+            return {
+                "email": "25ds1000059@ds.study.iitm.ac.in",
+                "filename": file.filename,
+                "rows": row_count,
+                "columns": columns,
+                "totalValue": round(total_value, 2),
+                "categoryCounts": category_counts
+            }
+
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid CSV format")
+
+    # For .json or .txt just accept
+    return {
+        "email": "25ds1000059@ds.study.iitm.ac.in",
+        "filename": file.filename,
+        "message": "File accepted"
+    }
